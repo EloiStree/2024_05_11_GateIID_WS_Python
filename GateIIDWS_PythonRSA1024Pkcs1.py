@@ -23,15 +23,8 @@ from datetime import datetime, timezone
 import requests
 import os
 
-from Crypto.Util import number
-from Crypto.Util.asn1 import DerSequence
-from Crypto.PublicKey import RSA
-from base64 import standard_b64encode, b64decode
-from binascii import a2b_base64
-from os.path import basename, exists
-from xml.dom import minidom
-import argparse
-import xml.etree.ElementTree as ET
+
+
 
 ## ## ## ## ## ## ## ## ## ## ## ## ## 
 ## Convention
