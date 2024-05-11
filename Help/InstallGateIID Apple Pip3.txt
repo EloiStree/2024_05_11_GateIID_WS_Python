@@ -1,0 +1,20 @@
+Python 3.12.3 (v3.12.3:f6650f9ad7, Apr  9 2024, 08:18:48) [Clang 13.0.0 (clang-1300.0.29.30)] on darwin
+Type "help", "copyright", "credits" or "license()" for more information.
+>>> 
+====== RESTART: /Volumes/KEY Y K6/GateIID/GateIIDWS_PythonRSA1024Pkcs1.py ======
+Hello World :) !
+This script it a gate to Integer RSA Tunneling Server IID.
+GitHub: https://github.com/EloiStree/2024_04_04_IndexIntegerDateTunnelingRSA
+Question(s): https://discord.gg/Jbh57NqNDH
+Want to play: https://discord.gg/TZvyzrMXMx
+Server IP fetched: ws://81.240.94.97:4501
+
+Connecting to IID Server: ws://81.240.94.97:4501
+Using local websocket listener on port:7073
+Using local UDP listener on port:3614
+Broadcasting server int change to local app ports: [1234, 5648, 4561]
+Broadcasting server int changeto local device ports: ['168.192.1.3:3616', '168.192.1.3:3615']
+Network Time Protocol (NTP) used: ['3.be.pool.ntp.org']
+Public IP: 81.240.94.97
+Current IPV4 address: 192.168.1.42
+Given Index Lock on server IID:  -15
