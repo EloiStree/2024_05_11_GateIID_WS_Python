@@ -21,7 +21,17 @@ import os
 import ntplib
 from datetime import datetime, timezone
 import requests
+import os
 
+from Crypto.Util import number
+from Crypto.Util.asn1 import DerSequence
+from Crypto.PublicKey import RSA
+from base64 import standard_b64encode, b64decode
+from binascii import a2b_base64
+from os.path import basename, exists
+from xml.dom import minidom
+import argparse
+import xml.etree.ElementTree as ET
 
 ## ## ## ## ## ## ## ## ## ## ## ## ## 
 ## Convention
@@ -84,7 +94,7 @@ udp_port_to_listen = 3614
 
 ## This is the url of the server to fetch the websocket server to connect to
 webpage_fetch_websocket_server_iid_url = "https://raw.githubusercontent.com/EloiStree/IP/main/IIDWS/SERVER.txt"
-webpage_fetch_websocket_server_iid_url =""
+## webpage_fetch_websocket_server_iid_url =""
 ## This is the url of the server to connect to as a IID server web socket.
 websocket_server_iid_url = "ws://81.240.94.97:4501"
 
@@ -96,6 +106,13 @@ use_random_push=False
 
 use_print_on_int_change=True
 
+
+## RSA Keys relative path
+## It is store by default near the script execution
+## You can use relative or absolute path
+## keys_relative_path= "C:\\RSA_KEYS" # store on the computer
+## keys_relative_path= "Keys" # store near the script execution
+keys_relative_path= "Keys"
 
 ## List of local port to broadcast the data to load from PORT.txt
 ## Use to send int change to local application on computer 
@@ -110,7 +127,6 @@ ipv4_port_list= ["168.192.1.3:3616"]
 NTP_SERVERS = ['3.be.pool.ntp.org']
 
 
-keys_relative_path= "Keys"
 
 ## ## ## ## ## ## ## ## ## ## ## ## ## 
 ## PRIVATE
@@ -142,6 +158,12 @@ def print_debug_params(message, value):
 def print_debug(message):
     if use_print_debug:
         print(message)
+
+
+
+
+
+
 
 
 
@@ -189,13 +211,15 @@ print_debug_params(f"IPv4 Port List:",ipv4_port_list)
 ## LOAD RSA FILES
 ## ## ## ## ## ## ## ## ## ## ## ## ## 
 
-private_pem_relative_path = os.path.join(keys_relative_path, 'RSA_PRIVATE_PEM.txt')
+private_pem_relative_path_private = os.path.join(keys_relative_path, 'RSA_PRIVATE_PEM.txt')
+private_pem_relative_path_public = os.path.join(keys_relative_path, 'RSA_PUBLIC_PEM.txt')
 
-private_key_path = os.path.abspath(private_pem_relative_path)
+private_key_path_file = os.path.abspath(private_pem_relative_path_private)
+public_key_path_file = os.path.abspath(private_pem_relative_path_public)
 
-print_debug_params("---- RSA_PRIVATE_PEM.txt Path |", private_key_path)
+print_debug_params("---- RSA_PRIVATE_PEM.txt Path |", private_key_path_file)
 
-if not os.path.exists(private_key_path):
+if not os.path.exists(private_key_path_file):
     print ("Generating new keys")
     # Generate a new RSA key pair
     private_key = rsa.generate_private_key(
@@ -215,18 +239,22 @@ if not os.path.exists(private_key_path):
         format=serialization.PublicFormat.PKCS1
     )         
 
+
+    folder_path = os.path.dirname(private_key_path_file)
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+
     # Save the keys to files
-    with open('RSA_PRIVATE_PEM.txt', 'wb') as f:
+    with open(private_key_path_file, 'wb') as f:
         f.write(private_pem)
 
-    with open('RSA_PUBLIC_PEM.txt', 'wb') as f:
+    with open(public_key_path_file, 'wb') as f:
         f.write(public_pem)
 
 
 
-
 # Load the private key from file
-with open('RSA_PRIVATE_PEM.txt', 'rb') as f:
+with open(private_key_path_file, 'rb') as f:
     private_key = serialization.load_pem_private_key(
         f.read(),
         password=None
@@ -245,9 +273,17 @@ public_pem = public_key.public_bytes(
     format=serialization.PublicFormat.PKCS1
 )  
 
+## Refuid public if lost from private given
+if not os.path.exists(public_key_path_file):
+    with open(public_key_path_file, 'wb') as f:
+        f.write(public_pem)
+
+       
+
+
 # Print the public and private keys
 print_debug_params("Public Key:\n", public_pem.decode('utf-8'))
-print_debug_params("Private Key:\n", private_pem.decode('utf-8'))
+#print_debug_params("Private Key:\n", private_pem.decode('utf-8'))
 
 
 
