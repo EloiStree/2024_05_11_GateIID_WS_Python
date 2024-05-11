@@ -95,7 +95,7 @@ websocket_server_iid_url = "ws://81.240.94.97:4501"
 ## Will hidre most of the print use to debug
 use_print_debug= False
 ## Use a random push of integer to debug the connection
-use_random_push=False
+use_random_push=True
 
 use_print_on_int_change=True
 
