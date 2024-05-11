@@ -143,6 +143,8 @@ random_range_min=15000
 random_range_max=45000
 
 
+given_index_lock_is_set=False
+given_index_lock=-1
 
 
 is_connected_to_server = False
@@ -521,8 +523,15 @@ async def on_byte_received_as_int_to_be_broadcast(ws, byte_received):
 
 
 async def on_message_from_iid_server(ws, message):
-    global is_connected_to_server
+    global is_connected_to_server , given_index_lock_is_set , given_index_lock
     print_debug(f"Received message: {message}")
+
+
+
+    if message.startswith("IndexLock:"):
+        given_index_lock_is_set=True
+        given_index_lock=int(message[10:].strip())
+        print("Given Index Lock on server IID: ", given_index_lock)
     if message.startswith("SIGNIN:"):
         # Extract the signed message from the response
         signed_message = message[7:].strip()
