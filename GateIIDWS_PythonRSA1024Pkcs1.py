@@ -586,22 +586,25 @@ async def websocket_listener_to_iid_server(uri):
 async def handler_local_websocket_server(websocket, path):
     while True:
         global target_port
-        data = await websocket.recv()
-
-        if len(data) == 4 or len(data) == 12 :
-            await push_byte_as_raw_to_server_iid(data)
-        else:
-            print_debug(f"Key Value| {data}")
-            date_parts = data.split(":")
-            if(len(date_parts) == 2):
-                key = date_parts[0]
-                value = date_parts[1]
-                print_debug(f"Key {key}  |  Value {value}")
-                try:
-                    intvalue = int(value)
-                    await push_int_to_server_iid(intvalue)
-                except ValueError:
-                    pass
+        try:
+            data = await websocket.recv()
+        except Exception as e:
+                print_debug_params("Client to server error:", str(e))
+        if data is not None and len(data) > 0:
+            if len(data) == 4 or len(data) == 12 :
+                await push_byte_as_raw_to_server_iid(data)
+            else:
+                print_debug(f"Key Value| {data}")
+                date_parts = data.split(":")
+                if(len(date_parts) == 2):
+                    key = date_parts[0]
+                    value = date_parts[1]
+                    print_debug(f"Key {key}  |  Value {value}")
+                    try:
+                        intvalue = int(value)
+                        await push_int_to_server_iid(intvalue)
+                    except ValueError:
+                        pass
 
 
 async def side_thread_function_websocket_server():
