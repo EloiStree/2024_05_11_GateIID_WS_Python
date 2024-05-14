@@ -391,7 +391,11 @@ def sign_message(message):
 async def push_byte_as_raw_to_server_iid(bytes_4_12):
     if(len(bytes_4_12) == 4 or len(bytes_4_12) == 12):
         if(websocket_linked is not None and is_connected_to_server):
-            await websocket_linked.send(bytes_4_12)
+            try:
+                await websocket_linked.send(bytes_4_12)
+            except:
+                print("Error sending data")
+                
 
 async def push_int_to_server_iid(random_int):
     if(websocket_linked is not None and is_connected_to_server):
@@ -463,11 +467,15 @@ if(use_random_push):
 
 def loop_thread_listen_udp():
     global udp_port_to_listen
+    data=0
+    address=""
     udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     udp_socket.bind(('0.0.0.0', udp_port_to_listen))
     while True:
         # Receive data from the socket
         data, address = udp_socket.recvfrom(64)
+
+
 
         # Process the received data
         if(websocket_linked is not None and  is_connected_to_server):
@@ -584,6 +592,7 @@ async def websocket_listener_to_iid_server(uri):
         
             
 async def handler_local_websocket_server(websocket, path):
+    data=None
     while True:
         global target_port
         try:
