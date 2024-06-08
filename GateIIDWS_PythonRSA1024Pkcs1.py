@@ -103,9 +103,9 @@ use_print_on_int_change=True
 ## RSA Keys relative path
 ## It is store by default near the script execution
 ## You can use relative or absolute path
-## keys_relative_path= "C:\\RSA_KEYS" # store on the computer
+keys_relative_path= "C:\\RSA_KEYS" # store on the computer
 ## keys_relative_path= "Keys" # store near the script execution
-keys_relative_path= "Keys"
+##keys_relative_path= "Keys"
 
 ## List of local port to broadcast the data to load from PORT.txt
 ## Use to send int change to local application on computer 
@@ -337,8 +337,8 @@ async def broadcast_iid_on_udp_port(byte_data):
     for port in local_port_list:
         sock.sendto(byte_data, ('localhost', port))
     for ipv4_port in ipv4_port_list:
-        ip, port = ipv4_port.strip().split(':')
-        sock.sendto(byte_data, (ip, int(port)))
+        ip, ip_port = ipv4_port.strip().split(':')
+        sock.sendto(byte_data, (ip, int(ip_port)))
     sock.close()
 
 
