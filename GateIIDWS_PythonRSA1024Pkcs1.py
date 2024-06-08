@@ -22,7 +22,34 @@ import ntplib
 from datetime import datetime, timezone
 import requests
 import os
+import iid_in_code_receiver_logic
+import importlib.util
 
+
+
+
+
+## ## ## ## ## ## ## ## ## ## ## ## ## 
+## Import Receiver Module
+## ## ## ## ## ## ## ## ## ## ## ## ## 
+
+def import_from_file(module_name, file_path):
+    spec = importlib.util.spec_from_file_location(module_name, file_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+## Example of how to Allow to import a module from a file if you want an action be not be delay by an other UDP delay
+
+modules_to_import={"ReceiverA": "ReceiverA.py"}
+for module_name, file_path in modules_to_import.items():
+    globals()[module_name] = import_from_file(module_name, file_path)
+ 
+
+def notify_received_iid_to_modules(int_index, int_value, ulong_date):
+    for module_name in modules_to_import.keys():
+        globals()[module_name].notify_received_iid(int_index, int_value, ulong_date)
 
 
 
@@ -84,18 +111,20 @@ local_websocket_server_port=7073
 use_local_udp_port_listener=True
 ## This port is use to listen to the UDP port to relay the data to the server
 udp_port_to_listen = 3614
-
+webpage_fetch_websocket_server_iid_url=""
 ## This is the url of the server to fetch the websocket server to connect to
 webpage_fetch_websocket_server_iid_url = "https://raw.githubusercontent.com/EloiStree/IP/main/IIDWS/SERVER.txt"
+##webpage_fetch_websocket_server_iid_url = "https://raw.githubusercontent.com/EloiStree/IP/main/IIDWS/SERVER_HOME.txt"
+##webpage_fetch_websocket_server_iid_url = "https://raw.githubusercontent.com/EloiStree/IP/main/IIDWS/SERVER_AZURE.txt"
 ## webpage_fetch_websocket_server_iid_url =""
 ## This is the url of the server to connect to as a IID server web socket.
-websocket_server_iid_url = "ws://81.240.94.97:4501"
+websocket_server_iid_url = "ws://4.233.77.115:4501"
 
 
 ## Will hidre most of the print use to debug
 use_print_debug= False
 ## Use a random push of integer to debug the connection
-use_random_push=False
+use_random_push=True
 
 use_print_on_int_change=True
 
@@ -164,10 +193,11 @@ def print_debug(message):
 
 
 
-if webpage_fetch_websocket_server_iid_url:
+if len(webpage_fetch_websocket_server_iid_url)>0:
     response = requests.get(webpage_fetch_websocket_server_iid_url)
     content = response.text
     print(f"Server IP fetched: {content}")
+    websocket_server_iid_url = content
 
 
 ## ## ## ## ## ## ## ## ## ## ## ## ## 
@@ -389,26 +419,23 @@ def sign_message(message):
 
 
 async def push_byte_as_raw_to_server_iid(bytes_4_12):
-    if(len(bytes_4_12) == 4 or len(bytes_4_12) == 12):
-        if(websocket_linked is not None and is_connected_to_server):
-            try:
+    if(bytes_4_12 is not None and len(bytes_4_12) == 4 or len(bytes_4_12) == 12):
+        if(websocket_linked is not None and is_connected_to_server ):
+            if websocket_linked is not None and websocket_linked.open:
                 await websocket_linked.send(bytes_4_12)
-            except:
-                print("Error sending data")
-                
 
-async def push_int_to_server_iid(random_int):
+async def push_int_to_server_iid(int_value):
     if(websocket_linked is not None and is_connected_to_server):
         useUTF8= False
-        ulong_milliseconds = 15000000000000000000
+        ulong_milliseconds = 16000000000000000000
         ulong_milliseconds+=int(get_current_time_with_offset() * 1000)
 
         # Send the current time in milliseconds with the integer value
         #ulong_milliseconds = int(datetime.datetime.now(datetime.timezone.utc).timestamp() * 1000)          
         data = bytearray(12)
         
-        random_bytes = random_int.to_bytes(4, byteorder='little')
-        milliseconds_bytes = ulong_milliseconds.to_bytes(8, byteorder='little')
+        random_bytes = struct.pack("<i", int_value)
+        milliseconds_bytes = struct.pack("<Q", ulong_milliseconds)
         data = random_bytes + milliseconds_bytes
 
         if(use_print_debug): 
@@ -416,7 +443,7 @@ async def push_int_to_server_iid(random_int):
             print_debug_params("Size: ", len(data))
             print_debug_params("B64: ", datab64)
         try:
-            print_debug(f"Random Push: {random_int} Milliseconds: {ulong_milliseconds}")
+            print_debug(f"Random Push: {int_value} Milliseconds: {ulong_milliseconds}")
             if(useUTF8):
                 datab64 =f"b|{base64.b64encode(data).decode('utf-8')}" 
                 await websocket_linked.send(datab64)
@@ -514,6 +541,8 @@ async def on_byte_received_as_int_to_be_broadcast(ws, byte_received):
             index = struct.unpack('<i', byte_received[0:4])[0]
             value = struct.unpack('<i', byte_received[4:8])[0]
             ulong_milliseconds = struct.unpack('<q', byte_received[8:16])[0]
+            iid_in_code_receiver_logic.notify_received_iid(index, value, ulong_milliseconds)
+            notify_received_iid_to_modules(index, value, ulong_milliseconds)
             await broadcast_iid_on_udp_port(byte_received)
             if use_print_on_int_change:
                 print(f"R: {index} | {value} | { ulong_milliseconds}")
@@ -595,15 +624,17 @@ async def handler_local_websocket_server(websocket, path):
     data=None
     while True:
         global target_port
+        data= None
         try:
             data = await websocket.recv()
         except Exception as e:
                 print_debug_params("Client to server error:", str(e))
         if data is not None and len(data) > 0:
             if len(data) == 4 or len(data) == 12 :
+                print (f"Received on local websocket, byte: {data}")
                 await push_byte_as_raw_to_server_iid(data)
             else:
-                print_debug(f"Key Value| {data}")
+                print(f"Received  on local wbesocket, Key Value| {data}")
                 date_parts = data.split(":")
                 if(len(date_parts) == 2):
                     key = date_parts[0]
@@ -643,6 +674,7 @@ def get_ip():
     return IP
         
 
+
 async def main():
     
     # Create tasks
@@ -652,6 +684,7 @@ async def main():
     
     task_2 = asyncio.create_task(websocket_listener_to_iid_server(websocket_server_iid_url))
     await task_2
+
 
 
 if __name__ == "__main__":
