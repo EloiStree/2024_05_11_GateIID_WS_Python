@@ -434,8 +434,8 @@ async def push_int_to_server_iid(int_value):
         #ulong_milliseconds = int(datetime.datetime.now(datetime.timezone.utc).timestamp() * 1000)          
         data = bytearray(12)
         
-        random_bytes = int_value.to_bytes(4, byteorder='little')
-        milliseconds_bytes = ulong_milliseconds.to_bytes(8, byteorder='little')
+        random_bytes = struct.pack("<i", int_value)
+        milliseconds_bytes = struct.pack("<Q", ulong_milliseconds)
         data = random_bytes + milliseconds_bytes
 
         if(use_print_debug): 
