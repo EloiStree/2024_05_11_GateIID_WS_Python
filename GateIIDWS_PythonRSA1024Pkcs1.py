@@ -38,22 +38,29 @@ import importlib.util
 ## ## ## ## ## ## ## ## ## ## ## ## ## 
 
 def import_from_file(module_name, file_path):
-    spec = importlib.util.spec_from_file_location(module_name, file_path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
+    try:
+        spec = importlib.util.spec_from_file_location(module_name, file_path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+    except Exception as e:
+        print(f"Error importing module {module_name} from {file_path}: {e}")
+        return None
 
 ## Example of how to Allow to import a module from a file if you want an action be not be delay by an other UDP delay
-
 modules_to_import={"ReceiverA": "ReceiverA.py"}
 for module_name, file_path in modules_to_import.items():
-    globals()[module_name] = import_from_file(module_name, file_path)
- 
+    module = import_from_file(module_name, file_path)
+    if module:
+        globals()[module_name] = module
 
 def notify_received_iid_to_modules(int_index, int_value, ulong_date):
     for module_name in modules_to_import.keys():
-        globals()[module_name].notify_received_iid(int_index, int_value, ulong_date)
+        try:
+            if module_name in globals():
+                globals()[module_name].notify_received_iid(int_index, int_value, ulong_date)
+        except Exception as e:
+            print(f"Error notifying module {module_name}: {e}")
 
 
 
@@ -109,7 +116,7 @@ print("Want to play: https://discord.gg/TZvyzrMXMx")
 use_local_websocket_listener=True
 ## This port is use to host a local websocket server to receive data from the client
 ## The aim is to be able to send data from webbrowser to server on unsecure websocket.
-local_websocket_server_port=7073
+local_websocket_server_port=4567
 
 ## Launch a thread listening to the UDP port to relay to the server
 use_local_udp_port_listener=True
